@@ -155,4 +155,30 @@ ggplot(data = train, aes(x = FireplaceQu, y = SalePrice, alpha = 0.3)) +
   geom_violin()
 ggplot(data = train, aes(x = FireplaceQu, y = SalePrice, alpha = 0.3)) +
   geom_boxplot()
-t.tes
+
+median(train[which(train$FireplaceQu == 'Gd'),]$SalePrice)
+median(train[which(train$FireplaceQu != 'None'),]$SalePrice)
+median(train[which(train$FireplaceQu == 'None'),]$SalePrice)
+mean(train[which(train$FireplaceQu == 'None'),]$SalePrice)
+mean(train[which(train$FireplaceQu != 'None'),]$SalePrice)
+t.test(train[which(train$FireplaceQu == 'Ex'),]$SalePrice)
+t.test(train[which(train$FireplaceQu == 'TA'),]$SalePrice)
+t.test(train[which(train$FireplaceQu == 'Gd'),]$SalePrice, 
+       train[which(train$FireplaceQu == 'TA'),]$SalePrice, paired = FALSE)
+t.test(train[which(train$FireplaceQu == 'None'),]$SalePrice)
+t.test(train[which(train$FireplaceQu != 'None'),]$SalePrice)
+
+#Utilities
+table(train$Utilities)
+table(test$Utilities)
+c(sum(is.na(train$Utilities)), sum(is.na(test$Utilities)))
+#Not at all usefull, as all house have AllPub
+
+
+#MasVnrType and MasVnrArea
+rbind(table(train$MasVnrType), table(test$MasVnrType))
+#train[which(is.na(train$MasVnrType)),]$MasVnrArea = 0
+#test[which(is.na(test$MasVnrType)),]$MasVnrArea = 0
+#train[which(is.na(train$MasVnrType)),]$MasVnrType = 'None'
+#test[which(is.na(test$MasVnrType)),]$MasVnrType = 'None'
+
