@@ -14,8 +14,7 @@ for(i in 1:length(names(complete_data))) {
 }
 
 #Categorical to numeric
-cat_num <- function(x) {
-  name = unique(x)
+cat_num <- function(x, name) {
   index = 1
   for(i in name) {
     x[which(x == i)] = as.integer(index)
@@ -87,6 +86,17 @@ train <- train[which(train$LotArea < 60000),]
 cor(train$LotArea, train$SalePrice) # very low correlation
 
 
+#GrLiveArea
+ggplot(train, aes(x = GrLivArea, y = SalePrice)) + 
+  geom_point() + geom_smooth()
+ggplot(complete_data, aes(x = GrLivArea)) + 
+  geom_histogram(aes(y = ..density..)) +
+  geom_density() 
+cor(train$GrLivArea, train$SalePrice)
+train <- train[which(train$GrLivArea < 4500),]
+
+
+
 #LotFrontage
 hist(train$LotFrontage)
 table(train$LotFrontage)
@@ -135,6 +145,16 @@ train[is.na(train$Electrical),]$SalePrice
 table(complete_data[which(complete_data$Neighborhood == 'Timber'),]$Electrical)# every home in Timber have SBrkr wiring
 train[is.na(train$Electrical),]$Electrical = 'SBrkr'
 
+#MoSold and YrSold and YearBuilt
+ggplot(train, aes(x = MoSold, y = SalePrice)) + geom_point() + geom_smooth() + facet_wrap(~YrSold)
+cor(train$MoSold, train$SalePrice)
+ggplot(train, aes(x = YrSold, y = SalePrice)) + geom_point() + geom_smooth() + facet_wrap(~MoSold)
+ggplot(train, aes(x = YearBuilt, y = SalePrice)) + geom_point() + geom_smooth() + facet_wrap(~YrSold)
+
+
+ggplot(train, aes(x = YearBuilt, y = SalePrice)) + geom_point() + geom_smooth()
+train[which(train$SalePrice > 400000 & train$YearBuilt < 1900),]
+
 
 
 #PoolQC
@@ -167,6 +187,12 @@ test[is.na(test$MiscFeature),]$MiscFeature = 'None'
 complete_data[is.na(complete_data$MiscFeature),]$MiscFeature = 'None'
 rbind(table(train$MiscFeature), table(test$MiscFeature))
 ggplot(data = train, aes(x = MiscFeature, y = SalePrice)) + geom_point()
+
+
+#MiscVal
+ggplot(train, aes(x = MiscVal)) + geom_density(fill = 'lightblue')
+ggplot(train[which(train$MiscVal > 0),], aes(x = MiscVal, y = SalePrice)) + geom_point() + geom_smooth()
+train[which(train$MiscVal > 2500),]
 
 
 
@@ -202,6 +228,19 @@ train <- train[,(!(names(train) %in% 'Utilities'))]
 test <- test[,(!(names(test) %in% 'Utilities'))]
 complete_data <- complete_data[,(!(names(complete_data) %in% 'Utilities'))]
 #Not at all usefull, as all house have AllPub
+
+
+#OverallCond and OverallQual
+#no na in both column
+table(train$OverallCond)
+table(train$OverallQual)
+cor(train$OverallCond, train$OverallQual)
+ggplot(train, aes(x = OverallQual, y = SalePrice)) +
+  geom_point() + geom_smooth()
+ggplot(train, aes(x = OverallCond, y = SalePrice)) +
+  geom_point() + geom_smooth()
+cor(train$OverallQual,train$SalePrice)
+cor(train$OverallCond,train$SalePrice)
 
 
 #MasVnrType and MasVnrArea
@@ -254,5 +293,55 @@ test[is.na(test$GarageCars),]$GarageCars = 2
 test[is.na(test$GarageArea),]$GarageArea = 519
 median(complete_data[which(complete_data$GarageCars == 2),]$GarageArea)
 #drop garage area
+
+
+#GarageQual and GarageCond
+table(complete_data$GarageCond)
+table(complete_data$GarageQual)
+test[is.na(test$GarageCond),]
+train[is.na(train$GarageCond),]$GarageCond = 'None'
+train[is.na(train$GarageQual),]$GarageQual = 'None'
+train[is.na(train$GarageFinish),]$GarageFinish = 'None'
+name = c("None", "Po",   "Fa",   "TA",   "Gd",   "Ex" )
+y = cat_num(train$GarageCond, name)
+cor(y, train$SalePrice)
+x = cat_num(train$GarageQual, name)
+cor(y, train$SalePrice)
+plot(y, train$SalePrice)
+name_finsih = c('Fin','RFn', 'Unf', 'None')
+z = cat_num(train$GarageFinish, name_finsih)
+cor(z,train$SalePrice)
+table(train$GarageFinish)
+ggplot(train, aes(x = GarageFinish, y = SalePrice)) + geom_point()
+#Drop both column. High leverage, all cor is because of TA
+#0.95 cor in Qual and Cond
+#consider GaraegeFinish
+
+#GarageType and GarageYrBlt
+table(complete_data$GarageType)
+ggplot(data = train, aes(x = GarageYrBlt, y = SalePrice)) + geom_line()+ geom_smooth()
+#yr <60 constt price, yr> 60 there is increase in price
+#main prob is to handle the the data with no garage as they will affect the trend if we
+#add 0 in GarageYrBlt column
+#make only 3 var,i.e away, home, none
+
+
+
+#Bsmt
+#BsmtCond and BsmtQual
+train[is.na(train$BsmtQual),]$BsmtQual = 'None'
+table(train$BsmtQual)
+y <- cat_num(train$BsmtQual, name)
+cor(y, train$SalePrice)
+ggplot(train, aes(x = y, y = SalePrice)) + geom_point() +
+  geom_smooth()
+test[is.na(test$BsmtQual),]$BsmtQual = 'None'
+table(test$BsmtQual)
+
+train[is.na(train$BsmtCond),]$BsmtCond = "None"
+table(train$BsmtCond)
+y <- cat_num(train$BsmtCond, name)
+cor(y, train$SalePrice)
+
 
 
