@@ -128,6 +128,9 @@ for (i in lot_na) {
                                                                  == i),]$LotFrontage),]$LotFrontage = 
     sample(c(x:y), len, replace = TRUE)
 }
+train$LotFrontage = complete_data[1:nrow(train),]$LotFrontage
+test$LotFrontage = complete_data[(nrow(train) +1) :2912,]$LotFrontage
+
 plot(complete_data$LotFrontage, complete_data$LotArea)
 
 
@@ -279,6 +282,7 @@ rbind(table(train$GarageCars), table(test$GarageCars))
 ggplot(train, aes(x = GarageArea, y = SalePrice)) + geom_point()
 cor(train$GarageArea, train$SalePrice)
 cor(train$GarageCars, train$SalePrice)
+sum(is.na(train$GarageCars))
 sum(is.na(test$GarageArea))
 sum(is.na(test$GarageCars))
 test[is.na(test$GarageCars),]$GarageArea #test[is.na(test$GarageArea),]$GarageCars both are same
@@ -337,6 +341,7 @@ ggplot(train, aes(x = y, y = SalePrice)) + geom_point() +
   geom_smooth()
 test[is.na(test$BsmtQual),]$BsmtQual = 'None'
 table(test$BsmtQual)
+sum(is.na(test$BsmtQual))
 
 train[is.na(train$BsmtCond),]$BsmtCond = "None"
 table(train$BsmtCond)
@@ -345,3 +350,77 @@ cor(y, train$SalePrice)
 
 
 
+#Applying transformations to variables
+#Final features uptill now
+#LotArea, GrLivArea, LotFrontage, YrBuilt, OverallQual, Neighborhood, GarageCars and BsmtQual
+#SalePrice
+ggplot(train, aes(x = SalePrice)) + geom_density() #right skewed
+SalePrice = log((train$SalePrice))
+ggplot(data.frame(SalePrice), aes(x = SalePrice)) + geom_density()
+
+#LotArea
+ggplot(train, aes(x = LotArea)) + geom_density()#right skewed
+ggplot(train, aes(x = LotArea, y = SalePrice)) + geom_point() + geom_point() + geom_smooth(method = 'lm')
+#apply log transformation
+LotArea = log((train$LotArea))
+LotArea_test = log((test$LotArea))
+ggplot(data.frame(LotArea), aes(x = LotArea)) + geom_density()
+ggplot(data.frame(LotArea), aes(x = LotArea, y = SalePrice)) + geom_point() + geom_smooth(method = 'lm')
+
+#GrLivArea
+ggplot(train, aes(x = GrLivArea)) + geom_density() #right skewed
+GrLivArea = log((train$GrLivArea))
+GrLivArea_test = log((test$GrLivArea))
+ggplot(data.frame(GrLivArea), aes(x = GrLivArea)) + geom_density()
+ggplot(data.frame(GrLivArea), aes(x = GrLivArea, y = SalePrice)) + geom_point() + geom_smooth(method = 'lm')
+
+#LotFrontage
+ggplot(train, aes(x = LotFrontage)) + geom_density() #right skewed
+LotFrontage = log((train$LotFrontage))
+LotFrontage_test = log((test$LotFrontage))
+ggplot(data.frame(LotFrontage), aes(x = LotFrontage)) + geom_density()
+ggplot(data.frame(LotFrontage), aes(x = LotFrontage, y = SalePrice)) + geom_point() + geom_smooth(method = 'lm')
+cor(LotFrontage, SalePrice)
+
+#YearBuilt
+YearBuilt = train$YearBuilt
+YearBuilt_test = test$YearBuilt
+
+#OverQual
+OverallQual = train$OverallQual
+OverallQual_test = test$OverallQual
+
+#Neighborhood
+name = unique(complete_data$Neighborhood)
+Neighborhood = cat_num(train$Neighborhood, name)
+Neighborhood_test = cat_num(test$Neighborhood, name)
+ggplot(data.frame(Neighborhood), aes(x = Neighborhood, y = SalePrice)) + geom_point() + geom_smooth()
+
+#GarageCars
+GarageCars = train$GarageCars
+GarageCars_test = test$GarageCars
+
+#BmstQual
+name = c('None', 'Fa','TA', 'Gd', 'Ex' )
+BsmtQual = cat_num(train$BsmtQual, name)
+BsmtQual_test = cat_num(test$BsmtQual, name)
+ggplot(data.frame(BsmtQual), aes(x = BsmtQual, y = SalePrice)) + geom_point()
+cor(BsmtQual, SalePrice)
+
+#Linear Regression
+fit = lm(SalePrice ~ LotArea+ GrLivArea+ LotFrontage+ YearBuilt+ OverallQual+ Neighborhood+ GarageCars+ BsmtQual)
+ans = predict(fit, newdata = data.frame(LotArea = LotArea_test, GrLivArea = GrLivArea_test, LotFrontage = LotFrontage_test,
+                                        YearBuilt = YrBuilt_test, OverallQual = OverallQual_test, Neighborhood = Neighborhood_test, 
+                                        GarageCars = GarageCars_test, BsmtQual = BsmtQual_test))
+ans = exp(ans)
+ggplot(data.frame(ans), aes(x = ans)) + geom_density()
+write.csv(ans, file = "LM_1_ANS.csv")
+
+#random Forest
+fit2 <- randomForest(SalePrice ~ LotArea+ GrLivArea+ LotFrontage+ YearBuilt+ OverallQual+ Neighborhood+ GarageCars+ BsmtQual, ntree = 1000, importance = TRUE)
+round(importance(fit2),3)
+ans3 = predict(fit2, newdata = data.frame(LotArea = LotArea_test, GrLivArea = GrLivArea_test, LotFrontage = LotFrontage_test,
+                                        YearBuilt = YrBuilt_test, OverallQual = OverallQual_test, Neighborhood = Neighborhood_test, 
+                                        GarageCars = GarageCars_test, BsmtQual = BsmtQual_test))
+ans3 = exp(ans3)
+write.csv(ans3, file = "RF_2_ANS.csv")
